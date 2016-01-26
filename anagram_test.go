@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	. "github.com/jamiecuthill/anagrams"
+	. "github.com/jamiecuthill/anagram"
 )
 
 func TestWordOccurences(t *testing.T) {
