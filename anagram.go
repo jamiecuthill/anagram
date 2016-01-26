@@ -102,16 +102,21 @@ func (o Occurences) Subtract(sub Occurences) Occurences {
 
 // Combinations returns all permutations of the occurences
 func (o Occurences) Combinations() []Occurences {
-	acc := make([]Occurences, 0, len(o)*len(o))
-	for j, occ := range o {
-		for i := 0; i < occ.Freq; i++ {
-			_ = o[j+1:].Combinations() // next
-			if i == 0 {
-				// append next
-				continue
-			}
-			// append (char, i) :: next
+	if len(o) == 0 {
+		return []Occurences{{}}
+	}
 
+	var acc []Occurences
+	head, tail := o[0], o[1:]
+	for _, next := range tail.Combinations() {
+		for i := 0; i <= head.Freq; i++ {
+			var occ Occurences
+			if i == 0 {
+				occ = next
+			} else {
+				occ = append(Occurences{{head.Char, i}}, next...)
+			}
+			acc = append(acc, occ)
 		}
 	}
 	return acc

@@ -143,7 +143,7 @@ func TestCombinations(t *testing.T) {
 	}
 	comb := w.Occurences().Combinations()
 	if !reflect.DeepEqual(comb, expect) {
-		t.Errorf("unexpected combinations: %v", comb)
+		t.Errorf("unexpected combinations:\n %v\n %v", comb, expect)
 	}
 }
 
