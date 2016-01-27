@@ -7,14 +7,29 @@ import (
 )
 
 func ExampleSentence_Anagrams() {
-	sentence := anagram.Sentence{"eat", "me"}
-
-	fmt.Println(sentence.Anagrams())
-	// Output: [[em ate] [em eat] [em tea] [me ate] [me eat] [me tea] [Mae et] [et Mae] [ate em] [ate me] [eat em] [eat me] [tea em] [tea me]]
+	for _, sentence := range (anagram.Sentence{"eat", "me"}).Anagrams() {
+		fmt.Println(sentence)
+	}
+	// Output:
+	// em ate
+	// em eat
+	// em tea
+	// me ate
+	// me eat
+	// me tea
+	// Mae et
+	// et Mae
+	// ate em
+	// ate me
+	// eat em
+	// eat me
+	// tea em
+	// tea me
 }
 
 func ExampleWord_Anagrams() {
 	w := anagram.Word("eat")
 	fmt.Println(w.Anagrams())
-	// Output: [ate eat tea]
+	// Output:
+	// [ate eat tea]
 }

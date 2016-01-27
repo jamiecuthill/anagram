@@ -10,13 +10,13 @@ Including the package will cause the entire dictionary to be loaded into memory.
 
 Anagrams of a single word
 ```go
-w := anagram.Word("eat")
-w.Anagrams() // [ate eat tea]
+eat := anagram.Word("eat")
+eat.Anagrams() // [ate eat tea]
 
 ```
 
 Anagrams of a sentence
 ```go
-sentence := anagram.Sentence{"eat", "me"}
-sentence.Anagrams() // [[me tea], [me ate], ...]
+eatMe := anagram.Sentence{"eat", "me"}
+eatMe.Anagrams() // [[me tea], [me ate], ...]
 ```

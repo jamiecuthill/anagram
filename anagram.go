@@ -9,6 +9,8 @@ import (
 	"sync"
 )
 
+var defaltDictionary = "dictionary.txt"
+
 var dictionary []Word
 
 type index struct {
@@ -20,6 +22,9 @@ var dictIndex index
 
 func (i *index) load() *index {
 	i.once.Do(func() {
+		if len(dictionary) == 0 {
+			Source(defaltDictionary)
+		}
 		i.m = make(map[string][]Word)
 		defer func() {
 			dictionary = []Word(nil)
@@ -32,9 +37,9 @@ func (i *index) load() *index {
 	return i
 }
 
-// Expensive init function that loads the word dictionary
-func init() {
-	f, err := os.Open("dictionary.txt")
+// Source loads the word dictionary
+func Source(dict string) {
+	f, err := os.Open(defaltDictionary)
 	if err != nil {
 		panic("dictionary.txt missing")
 	}
@@ -102,6 +107,14 @@ func (s Sentence) Occurences() Occurences {
 // Anagrams of the sentence
 func (s Sentence) Anagrams() []Sentence {
 	return anagrams(s.Occurences())
+}
+
+func (s Sentence) String() string {
+	var str []string
+	for _, w := range s {
+		str = append(str, string(w))
+	}
+	return strings.Join(str, " ")
 }
 
 func anagrams(occurences Occurences) []Sentence {
