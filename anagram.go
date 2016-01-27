@@ -2,6 +2,7 @@ package anagram
 
 import (
 	"bufio"
+	"bytes"
 	"os"
 	"sort"
 	"strconv"
@@ -159,11 +160,12 @@ func (o Occurences) Less(i, j int) bool {
 }
 
 func (o Occurences) key() string {
-	out := ""
+	var buf bytes.Buffer
 	for i := range o {
-		out += strconv.Itoa(int(o[i].Char)) + strconv.Itoa(o[i].Freq)
+		buf.WriteRune(o[i].Char)
+		buf.WriteString(strconv.Itoa(o[i].Freq))
 	}
-	return out
+	return buf.String()
 }
 
 // Subtract removes the occurences and returns the result
