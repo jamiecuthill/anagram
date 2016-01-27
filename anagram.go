@@ -93,11 +93,11 @@ type Sentence []Word
 
 // word converts the Sentence to a Word by concatenating with no separator
 func (s Sentence) word() Word {
-	var w Word
-	for _, word := range s {
-		w += word
+	var buf bytes.Buffer
+	for i := range s {
+		buf.WriteString(string(s[i]))
 	}
-	return w
+	return Word(buf.String())
 }
 
 // Occurences is the count of each character in the sentence
@@ -111,11 +111,14 @@ func (s Sentence) Anagrams() []Sentence {
 }
 
 func (s Sentence) String() string {
-	var str []string
-	for _, w := range s {
-		str = append(str, string(w))
+	var buf bytes.Buffer
+	for i := range s {
+		if i > 0 {
+			buf.WriteString(" ")
+		}
+		buf.WriteString(string(s[i]))
 	}
-	return strings.Join(str, " ")
+	return buf.String()
 }
 
 func anagrams(occurences Occurences) []Sentence {
