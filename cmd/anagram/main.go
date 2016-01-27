@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
 
 	"github.com/jamiecuthill/anagram"
 )
@@ -17,7 +16,7 @@ func init() {
 
 func main() {
 	var words anagram.Sentence
-	for _, w := range os.Args[1:] {
+	for _, w := range flag.Args() {
 		words = append(words, anagram.Word(w))
 	}
 	for _, out := range words.Anagrams() {

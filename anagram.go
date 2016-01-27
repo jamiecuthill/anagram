@@ -39,7 +39,7 @@ func (i *index) load() *index {
 
 // Source loads the word dictionary
 func Source(dict string) {
-	f, err := os.Open(defaltDictionary)
+	f, err := os.Open(dict)
 	if err != nil {
 		panic("dictionary.txt missing")
 	}
