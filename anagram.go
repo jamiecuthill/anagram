@@ -45,8 +45,8 @@ func init() {
 		if err != nil {
 			return
 		}
-		// Our dictionary words are shorter than the defaultBufSize but if something
-		// a prefix is detected panic
+		// Our dictionary words are shorter than the defaultBufSize so isPrefix
+		// should always be false for the current state.
 		if isPrefix {
 			panic("insufficient buffer for line: " + string(line))
 		}
@@ -84,6 +84,15 @@ func (w Word) Occurences() Occurences {
 
 // Sentence is a collection of words
 type Sentence []Word
+
+// word converts the Sentence to a Word by concatenating with no separator
+func (s Sentence) word() Word {
+	var w Word
+	for _, word := range s {
+		w += word
+	}
+	return w
+}
 
 // Occurences is the count of each character in the sentence
 func (s Sentence) Occurences() Occurences {
@@ -183,15 +192,6 @@ func (o Occurences) Combinations() []Occurences {
 		}
 	}
 	return combs
-}
-
-// word converts the Sentence to a Word by concatenating with no separator
-func (s Sentence) word() Word {
-	var w Word
-	for _, word := range s {
-		w += word
-	}
-	return w
 }
 
 // Dictionary of words that match the given occurence
