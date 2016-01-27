@@ -55,14 +55,11 @@ func TestSentenceOccurences(t *testing.T) {
 }
 
 func TestDictionaryEat(t *testing.T) {
-	words, ok := Dictionary(Occurences{
+	words := Dictionary(Occurences{
 		{toRune("a"), 1},
 		{toRune("e"), 1},
 		{toRune("t"), 1},
 	})
-	if !ok {
-		t.Fatal("expected occurences to exist in the dictionary")
-	}
 	if !reflect.DeepEqual(words, []Word{"ate", "eat", "tea"}) {
 		t.Errorf("unexpected word set %v", words)
 	}
@@ -142,8 +139,47 @@ func TestCombinations(t *testing.T) {
 		{{toRune("a"), 2}, {toRune("b"), 2}},
 	}
 	comb := w.Occurences().Combinations()
+	// Order really shouldn't matter here but DeepEqual does care
 	if !reflect.DeepEqual(comb, expect) {
 		t.Errorf("unexpected combinations:\n %v\n %v", comb, expect)
+	}
+}
+
+func TestSentenceAnagramsEmpty(t *testing.T) {
+	var s = make(Sentence, 0)
+	anags := s.Anagrams()
+	if !reflect.DeepEqual(anags, []Sentence{{}}) {
+		t.Errorf("unexpected anagrams %v", anags)
+	}
+}
+
+func TestSentenceAnagrams(t *testing.T) {
+	var s = Sentence{"Linux", "rulez"}
+	var expect = []Sentence{
+		{"Rex", "Lin", "Zulu"},
+		{"nil", "Zulu", "Rex"},
+		{"Rex", "nil", "Zulu"},
+		{"Zulu", "Rex", "Lin"},
+		{"null", "Uzi", "Rex"},
+		{"Rex", "Zulu", "Lin"},
+		{"Uzi", "null", "Rex"},
+		{"Rex", "null", "Uzi"},
+		{"null", "Rex", "Uzi"},
+		{"Lin", "Rex", "Zulu"},
+		{"nil", "Rex", "Zulu"},
+		{"Rex", "Uzi", "null"},
+		{"Rex", "Zulu", "nil"},
+		{"Zulu", "Rex", "nil"},
+		{"Zulu", "Lin", "Rex"},
+		{"Lin", "Zulu", "Rex"},
+		{"Uzi", "Rex", "null"},
+		{"Zulu", "nil", "Rex"},
+		{"rulez", "Linux"},
+		{"Linux", "rulez"},
+	}
+	anags := s.Anagrams()
+	if !reflect.DeepEqual(anags, expect) {
+		t.Errorf("unexpected anagrams: %v", anags)
 	}
 }
 

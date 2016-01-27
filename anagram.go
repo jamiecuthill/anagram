@@ -8,12 +8,15 @@ import (
 	"strings"
 )
 
+var dictionary []Word
+
 // Expensive init function that loads the word dictionary
 func init() {
 	f, err := os.Open("dictionary.txt")
 	if err != nil {
 		panic("dictionary.txt missing")
 	}
+	defer f.Close()
 	buf := bufio.NewReader(f)
 	var i = 0
 	for {
@@ -30,21 +33,44 @@ func init() {
 	}
 }
 
-var dictionary []Word
-
 // Word is a single word
 type Word string
 
 // Anagrams of word
 func (w Word) Anagrams() []Word {
-	if words, ok := Dictionary(w.Occurences()); ok {
-		return words
-	}
-	return nil
+	return Dictionary(w.Occurences())
 }
 
 // Sentence is a collection of words
 type Sentence []Word
+
+// Occurences is the count of each character in the sentence
+func (s Sentence) Occurences() Occurences {
+	return s.Word().Occurences()
+}
+
+// Anagrams of the sentence
+func (s Sentence) Anagrams() []Sentence {
+	return anagrams(s.Occurences())
+}
+
+func anagrams(occurences Occurences) []Sentence {
+	if len(occurences) == 0 {
+		return []Sentence{}
+	}
+	var acc []Sentence
+	for _, occurence := range occurences.Combinations() {
+		for _, word := range Dictionary(occurence) {
+			fmt.Println(word)
+			var acc2 Sentence
+			for _, tail := range anagrams(occurences.Subtract(occurence)) {
+				acc2 = append(Sentence{word}, tail...)
+			}
+			acc = append(acc, acc2)
+		}
+	}
+	return acc
+}
 
 type occurence struct {
 	Char rune
@@ -80,23 +106,22 @@ func (o Occurences) key() string {
 
 // Subtract removes the occurences and returns the result
 func (o Occurences) Subtract(sub Occurences) Occurences {
-	// sub could be converted to a map and used as a lookup
-	// Current cost is ~N*M
-	// Cost with subtract map could be N+M
-	acc := make(Occurences, len(o))
-	copy(acc, o)
-	for _, v := range sub {
-		for i := range acc {
-			if acc[i].Char != v.Char {
-				continue
-			}
-			if frq := acc[i].Freq - v.Freq; frq > 0 {
-				acc[i].Freq = frq
-				break
-			}
-			acc = append(acc[:i], acc[i+1:]...)
-		}
+	remove := make(map[rune]int)
+	for i := range sub {
+		remove[sub[i].Char] = sub[i].Freq
 	}
+
+	acc := make(Occurences, 0, len(o))
+	for i := range o {
+		if n, ok := remove[o[i].Char]; ok {
+			if frq := o[i].Freq - n; frq > 0 {
+				acc = append(acc, occurence{o[i].Char, frq})
+			}
+			continue
+		}
+		acc = append(acc, o[i])
+	}
+
 	return acc
 }
 
@@ -138,14 +163,10 @@ func (w Word) Occurences() Occurences {
 	return out
 }
 
-// Occurences is the count of each character in the sentence
-func (s Sentence) Occurences() Occurences {
-	return s.Word().Occurences()
-}
-
 // Word converts the Sentence to a Word by concatenating with no separator
 func (s Sentence) Word() Word {
 	str := make([]string, len(s))
+	// If only you could cast or copy a slice of string to slice of Word
 	for i := range s {
 		str[i] = string(s[i])
 	}
@@ -155,12 +176,14 @@ func (s Sentence) Word() Word {
 var lazyDictionary map[string][]Word
 
 // Dictionary for the occurences
-func Dictionary(o Occurences) ([]Word, bool) {
+func Dictionary(o Occurences) []Word {
 	if len(lazyDictionary) == 0 {
 		loadDictionary()
 	}
-	v, ok := lazyDictionary[o.key()]
-	return v, ok
+	if v, ok := lazyDictionary[o.key()]; ok {
+		return v
+	}
+	return []Word{}
 }
 
 func loadDictionary() {
