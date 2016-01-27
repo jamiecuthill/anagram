@@ -125,6 +125,13 @@ func TestSubtract(t *testing.T) {
 	}
 }
 
+func TestCombinationsEmpty(t *testing.T) {
+	combs := Occurences{}.Combinations()
+	if !reflect.DeepEqual(combs, []Occurences{{}}) {
+		t.Errorf("empty occurences should return an empty occurences combinations")
+	}
+}
+
 func TestCombinations(t *testing.T) {
 	var w Word = "abba"
 	expect := []Occurences{

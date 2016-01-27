@@ -6,9 +6,31 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 )
 
 var dictionary []Word
+
+type index struct {
+	once sync.Once
+	m    map[string][]Word
+}
+
+var dictIndex index
+
+func (i *index) load() *index {
+	i.once.Do(func() {
+		i.m = make(map[string][]Word)
+		defer func() {
+			dictionary = []Word(nil)
+		}()
+		for _, word := range dictionary {
+			key := word.Occurences().key()
+			i.m[key] = append(i.m[key], word)
+		}
+	})
+	return i
+}
 
 // Expensive init function that loads the word dictionary
 func init() {
@@ -18,18 +40,17 @@ func init() {
 	}
 	defer f.Close()
 	buf := bufio.NewReader(f)
-	var i = 0
 	for {
 		line, isPrefix, err := buf.ReadLine()
 		if err != nil {
 			return
 		}
+		// Our dictionary words are shorter than the defaultBufSize but if something
+		// a prefix is detected panic
 		if isPrefix {
-			dictionary[i] = dictionary[i] + Word(line)
-			continue
+			panic("insufficient buffer for line: " + string(line))
 		}
 		dictionary = append(dictionary, Word(line))
-		i++
 	}
 }
 
@@ -41,12 +62,32 @@ func (w Word) Anagrams() []Word {
 	return Dictionary(w.Occurences())
 }
 
+// lower case the word
+func (w Word) lower() Word {
+	return Word(strings.ToLower(string(w)))
+}
+
+// Occurences is the count of each character in the word
+func (w Word) Occurences() Occurences {
+	freqs := make(map[rune]int)
+	for _, r := range w.lower() {
+		freqs[r]++
+	}
+
+	occurences := make(Occurences, 0, len(freqs))
+	for char, freq := range freqs {
+		occurences = append(occurences, occurence{char, freq})
+	}
+	sort.Sort(occurences)
+	return occurences
+}
+
 // Sentence is a collection of words
 type Sentence []Word
 
 // Occurences is the count of each character in the sentence
 func (s Sentence) Occurences() Occurences {
-	return s.Word().Occurences()
+	return s.word().Occurences()
 }
 
 // Anagrams of the sentence
@@ -55,10 +96,11 @@ func (s Sentence) Anagrams() []Sentence {
 }
 
 func anagrams(occurences Occurences) []Sentence {
-	acc := make([]Sentence, 0, 1)
+	anags := make([]Sentence, 0, 1)
 	if len(occurences) == 0 {
-		acc = append(acc, Sentence{})
-		return acc
+		// An empty sentence must be returned for occurences of length 0
+		anags = append(anags, Sentence{})
+		return anags
 	}
 
 	for _, occurence := range occurences.Combinations() {
@@ -67,10 +109,10 @@ func anagrams(occurences Occurences) []Sentence {
 			for _, tail := range anagrams(occurences.Subtract(occurence)) {
 				sentences = append(sentences, append(Sentence{word}, tail...))
 			}
-			acc = append(acc, sentences...)
+			anags = append(anags, sentences...)
 		}
 	}
-	return acc
+	return anags
 }
 
 type occurence struct {
@@ -83,6 +125,7 @@ func (o occurence) String() string {
 }
 
 // Occurences is a list of character and frequency, it must be sorted alphabetically
+// therefore it can not be a map
 type Occurences []occurence
 
 func (o Occurences) Len() int {
@@ -98,100 +141,64 @@ func (o Occurences) Less(i, j int) bool {
 }
 
 func (o Occurences) key() string {
-	acc := make([]string, len(o))
-	for i := range o {
-		acc[i] = o[i].String()
-	}
-	return strings.Join(acc, " ")
+	return fmt.Sprintf("%v", o)
 }
 
 // Subtract removes the occurences and returns the result
 func (o Occurences) Subtract(sub Occurences) Occurences {
-	remove := make(map[rune]int)
-	for i := range sub {
-		remove[sub[i].Char] = sub[i].Freq
+	amount := make(map[rune]int)
+	for _, occ := range sub {
+		amount[occ.Char] = occ.Freq
 	}
 
 	acc := make(Occurences, 0, len(o))
-	for i := range o {
-		if n, ok := remove[o[i].Char]; ok {
-			if frq := o[i].Freq - n; frq > 0 {
-				acc = append(acc, occurence{o[i].Char, frq})
+	for _, occ := range o {
+		if n, ok := amount[occ.Char]; ok {
+			if frq := occ.Freq - n; frq > 0 {
+				acc = append(acc, occurence{occ.Char, frq})
 			}
 			continue
 		}
-		acc = append(acc, o[i])
+		acc = append(acc, occ)
 	}
-
 	return acc
 }
 
 // Combinations returns all permutations of the occurences
 func (o Occurences) Combinations() []Occurences {
+	combs := make([]Occurences, 0, 1)
 	if len(o) == 0 {
-		return []Occurences{{}}
+		combs = append(combs, Occurences{})
+		return combs
 	}
 
-	var acc []Occurences
 	head, tail := o[0], o[1:]
 	for _, next := range tail.Combinations() {
 		for i := 0; i <= head.Freq; i++ {
-			var occ Occurences
 			if i == 0 {
-				occ = next
-			} else {
-				occ = append(Occurences{{head.Char, i}}, next...)
+				combs = append(combs, next)
+				continue
 			}
-			acc = append(acc, occ)
+			combs = append(combs, append(Occurences{{head.Char, i}}, next...))
 		}
 	}
-	return acc
+	return combs
 }
 
-// Occurences is the count of each character in the word
-func (w Word) Occurences() Occurences {
-	s := strings.ToLower(string(w))
-	acc := make(map[rune]int)
-	for _, r := range s {
-		acc[r]++
+// word converts the Sentence to a Word by concatenating with no separator
+func (s Sentence) word() Word {
+	var w Word
+	for _, word := range s {
+		w += word
 	}
-
-	out := make(Occurences, 0, len(acc))
-	for k, v := range acc {
-		out = append(out, occurence{k, v})
-	}
-	sort.Sort(out)
-	return out
+	return w
 }
 
-// Word converts the Sentence to a Word by concatenating with no separator
-func (s Sentence) Word() Word {
-	str := make([]string, len(s))
-	// If only you could cast or copy a slice of string to slice of Word
-	for i := range s {
-		str[i] = string(s[i])
-	}
-	return Word(strings.Join(str, ""))
-}
-
-var lazyDictionary map[string][]Word
-
-// Dictionary for the occurences
+// Dictionary of words that match the given occurence
+// Example Dictionary(Occurences{{a, 1}, {e, 1}, {t, 1}}) = [ate eat tea]
 func Dictionary(o Occurences) []Word {
-	if len(lazyDictionary) == 0 {
-		loadDictionary()
-	}
-	if v, ok := lazyDictionary[o.key()]; ok {
+	if v, ok := dictIndex.load().m[o.key()]; ok {
 		return v
 	}
-	return []Word{}
-}
-
-func loadDictionary() {
-	lazyDictionary = make(map[string][]Word)
-	for i := range dictionary {
-		w := Word(dictionary[i])
-		k := w.Occurences().key()
-		lazyDictionary[k] = append(lazyDictionary[k], w)
-	}
+	return []Word(nil)
 }
