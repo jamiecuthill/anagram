@@ -138,10 +138,19 @@ func TestCombinations(t *testing.T) {
 		{{toRune("a"), 1}, {toRune("b"), 2}},
 		{{toRune("a"), 2}, {toRune("b"), 2}},
 	}
-	comb := w.Occurences().Combinations()
-	// Order really shouldn't matter here but DeepEqual does care
-	if !reflect.DeepEqual(comb, expect) {
-		t.Errorf("unexpected combinations:\n %v\n %v", comb, expect)
+	occ := w.Occurences()
+	comb := occ.Combinations()
+	for _, occurence := range expect {
+		var found bool
+		for i := range comb {
+			if reflect.DeepEqual(comb[i], occurence) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("occurence not found %v", occurence)
+		}
 	}
 }
 
@@ -178,8 +187,20 @@ func TestSentenceAnagrams(t *testing.T) {
 		{"Linux", "rulez"},
 	}
 	anags := s.Anagrams()
-	if !reflect.DeepEqual(anags, expect) {
-		t.Errorf("unexpected anagrams: %v", anags)
+	if len(anags) != len(expect) {
+		t.Errorf("unexpected number of anagrams: %d, want %d", len(anags), len(expect))
+	}
+	for _, sentence := range expect {
+		var found bool
+		for i := range anags {
+			if reflect.DeepEqual(anags[i], sentence) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("sentence not found %v", sentence)
+		}
 	}
 }
 

@@ -55,18 +55,19 @@ func (s Sentence) Anagrams() []Sentence {
 }
 
 func anagrams(occurences Occurences) []Sentence {
+	acc := make([]Sentence, 0, 1)
 	if len(occurences) == 0 {
-		return []Sentence{}
+		acc = append(acc, Sentence{})
+		return acc
 	}
-	var acc []Sentence
+
 	for _, occurence := range occurences.Combinations() {
 		for _, word := range Dictionary(occurence) {
-			fmt.Println(word)
-			var acc2 Sentence
+			sentences := []Sentence{}
 			for _, tail := range anagrams(occurences.Subtract(occurence)) {
-				acc2 = append(Sentence{word}, tail...)
+				sentences = append(sentences, append(Sentence{word}, tail...))
 			}
-			acc = append(acc, acc2)
+			acc = append(acc, sentences...)
 		}
 	}
 	return acc
