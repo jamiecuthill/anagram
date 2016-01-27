@@ -2,9 +2,9 @@ package anagram
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -142,10 +142,6 @@ type occurence struct {
 	Freq int
 }
 
-func (o occurence) String() string {
-	return fmt.Sprintf("%c:%d", o.Char, o.Freq)
-}
-
 // Occurences is a list of character and frequency, it must be sorted alphabetically
 // therefore it can not be a map
 type Occurences []occurence
@@ -163,7 +159,11 @@ func (o Occurences) Less(i, j int) bool {
 }
 
 func (o Occurences) key() string {
-	return fmt.Sprintf("%v", o)
+	out := ""
+	for i := range o {
+		out += strconv.Itoa(int(o[i].Char)) + strconv.Itoa(o[i].Freq)
+	}
+	return out
 }
 
 // Subtract removes the occurences and returns the result
